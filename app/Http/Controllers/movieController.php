@@ -37,15 +37,10 @@ class movieController extends Controller
         // Adjust perPage based on the desired total number of items
         $perPage = min(10, $totalResults); // Change the perPage as needed, but limit it based on totalResults
 
-        // Apply orderBy before creating the paginator
-        $data = Movie::orderBy('release_date', $orderDirection)->paginate($perPage);
-
-        $currentPageItems = $data->slice(($currentPage - 1) * $perPage, $perPage)->all();
-        $paginatedData = new LengthAwarePaginator($currentPageItems, $totalResults, $perPage, $currentPage);
+        // Create a paginator instance using the API response data
+        $paginatedData = new LengthAwarePaginator($data, $totalResults, $perPage, $currentPage);
 
         $paginatedData->setPath('/loadPopular'); // Set the route for the pagination links
-
-        session(['data' => $paginatedData]);
 
         return view('test', compact('paginatedData', 'order')); // Pass paginatedData and order to the view
     }
