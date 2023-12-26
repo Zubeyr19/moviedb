@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<body lang="en">
 
 <head>
     <meta charset="UTF-8">
@@ -10,35 +10,67 @@
 </head>
 
 <body>
-    @include('search')
-    <div id="innerbody">
-        <div id="title-div">
-            <h1>Popular movies</h1>
-            <?php if (session()->has('user')) {
-                $temp = session('user');
-                echo $temp->name;
-            }
-            ?>
-        </div>
-        <div id="searchPoster"></div>
-        <div id="poster-div">
-            <button id="left-arrow" style="visibility: hidden"><i class="fa-solid fa-chevron-left"></i></button>
+@include('search')
+
+<div id="innerbody">
+    <div id="title-div">
+        <h1>Popular movies</h1>
+        <?php
+        if (session()->has('user')) {
+            $temp = session('user');
+            echo $temp->name;
+        }
+        ?>
+    </div>
+
+    <div id="searchPoster"></div>
+
+    <div id="poster-div" style="display: flex; flex-direction: column; align-items: center;">
+        <button id="left-arrow" style="visibility: hidden"><i class="fa-solid fa-chevron-left"></i></button>
+
+        <div style="display: flex; flex-wrap: wrap; justify-content: center;">
             <?php
             $data = session('data');
             $poster = session('poster');
             if (isset($data)) {
-                for ($i = 0; $i < 6; $i++) {
-                    echo '<a class="redposter"><img class="redposterimg poster" src="https://image.tmdb.org/t/p/w500' . $data[$i]->poster_path . '"></a>';
+                // Display up to 10 movies in a 5x2 grid
+                for ($i = 0; $i < min(10, count($data)); $i++) {
+                    echo '<div class="redposter" style="margin: 0.5rem;"><img class="redposterimg poster" src="https://image.tmdb.org/t/p/w500' . $data[$i]->poster_path . '"></div>';
                 }
             }
             ?>
-            <button id="right-arrow"><i class="fa-solid fa-chevron-right"></i></button>
         </div>
-        <h1 id="watchlist-title">Your Watchlist</h1>
-        <div id="watchlist-div">
 
-        </div>
+        <button id="right-arrow"><i class="fa-solid fa-chevron-right"></i></button>
     </div>
+
+    <h1 id="watchlist-title">Your Watchlist</h1>
+    <div id="watchlist-div"></div>
+</div>
+
+<!-- Pagination Links -->
+<div class="pagination">
+    {{ $paginatedData->links('pagination::bootstrap-4') }}
+    <!-- Previous Page Button -->
+    @if ($paginatedData->currentPage() > 1)
+        <a href="{{ url('/loadPopular', ['page' => $paginatedData->currentPage() - 1, 'order' => $order]) }}" class="pagination-link">Previous</a>
+    @endif
+
+    <!-- Numerical Page Buttons -->
+    @for ($i = max(1, $paginatedData->currentPage() - 2); $i <= min($paginatedData->lastPage(), $paginatedData->currentPage() + 2); $i++)
+        <a href="{{ url('/loadPopular', ['page' => $i, 'order' => $order]) }}" class="pagination-link {{ $i == $paginatedData->currentPage() ? 'active' : '' }}">{{ $i }}</a>
+    @endfor
+
+    <!-- Next Page Button -->
+    @if ($paginatedData->hasMorePages())
+        <a href="{{ $paginatedData->nextPageUrl() }}" class="pagination-link">Next</a>
+    @endif
+
+    <!-- Sort Buttons -->
+    <a href="{{ url('/loadPopular', ['page' => 1, 'order' => 'desc']) }}" class="pagination-link">Older to Newer</a>
+    <a href="{{ url('/loadPopular', ['page' => 1, 'order' => 'asc']) }}" class="pagination-link">Newer to Older</a>
+</div>
+</div>
     <script>
         let counter = 0;
         let data = <?php echo json_encode($data); ?>;
@@ -147,7 +179,8 @@
     </script>
 </body>
 
-</html>
+
+</body>
 <style>
     #image {
         display: flex;
@@ -228,5 +261,34 @@
     #emptywatchlist {
         position: absolute;
         margin-top: 7rem;
+    }
+    /* Pagination Styles */
+    .pagination a.pagination-link {
+        color: black;
+        float: left;
+        padding: 8px 16px;
+        text-decoration: none;
+        border: 1px solid #ddd;
+        margin-right: 5px; /* Adjust margin as needed */
+    }
+
+    .pagination a.pagination-link:hover:not(.active) {
+        background-color: #ddd;
+    }
+
+    .pagination a.pagination-link.active {
+        background-color: #4CAF50;
+        color: white;
+        border: 1px solid #4CAF50;
+    }
+
+    .pagination a.pagination-link:first-child {
+        border-top-left-radius: 5px;
+        border-bottom-left-radius: 5px;
+    }
+
+    .pagination a.pagination-link:last-child {
+        border-top-right-radius: 5px;
+        border-bottom-right-radius: 5px;
     }
 </style>

@@ -2,8 +2,8 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Document</title>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <script src="https://kit.fontawesome.com/d826f0fb4b.js" crossorigin="anonymous"></script>
@@ -15,76 +15,75 @@
 } ?>
 
 <body>
-    <script></script>
-    @include('search')
-    <div id="innerbody">
-        <div id="title-div">
-            <div id="title">
-                <h1>
-                    {{ $data->title }}
-                </h1>
-                <ul id="under-title-div">
-                    <a>
-                        <?php echo substr($data->release_date, 0, 4); ?>
-                    </a>
-                    <li>
-                        <?php echo intval($data->runtime / 60);
-                        echo 'h ';
-                        echo $data->runtime % 60;
-                        echo 'm'; ?>
-                    </li>
-                </ul>
-            </div>
-            <h3 class="h3"><span class="fa fa-star checked"></span>
-                <?php echo substr($data->vote_average, 0, 3); ?> / 10
-            </h3>
-            <h3 class="h3" id="popularity-header"><i class="fa fa-eye"></i>
-                <?php echo intval($data->popularity); ?>
-            </h3>
+<script></script>
+@include('search')
+<div id="innerbody">
+    <div id="title-div">
+        <div id="title">
+            <h1>
+                {{ $data->title }}
+            </h1>
+            <ul id="under-title-div">
+                <a>
+                    <?php echo substr($data->release_date, 0, 4); ?>
+                </a>
+                <li>
+                    <?php echo intval($data->runtime / 60);
+                    echo 'h ';
+                    echo $data->runtime % 60;
+                    echo 'm'; ?>
+                </li>
+            </ul>
         </div>
-        <div id="backdrop">
-            <?php
-            print_r('<img src="https://image.tmdb.org/t/p/w500' . $data->poster_path . '"/>');
-            ?>
-        </div>
-        <div id="genres">
-            @foreach ($data->genres as $e)
-                <button class='genrebuttons'>{{ $e->name }}</button>
-            @endforeach
-        </div>
-        <div class="title-div">
-            <h2>Overview</h2>
-            <button id="watchlist-button">
-                <i class="fa-solid fa-plus plus"></i>
-                Add to watchlist
-            </button>
-        </div>
-        <div id="overview">
-            <?php
-            print_r("<p>$data->overview</p>");
-            ?>
-
-        </div>
-        <div>
-            <h4 id="commentsheader">Reviews</h4>
-            <div class=commentsForm>
-                <form id="commentForm" type="submit">
-                    <textarea id="commentInput" name="Text1" cols="40" rows="5" placeholder="What did you think of the movie"></textarea>
-                    <button class="commentButton" type="submit">Submit</button>
-                </form>
-            </div>
-            <div id="comments">
-
-            </div>
-
-        </div>
+        <h3 class="h3"><span class="fa fa-star checked"></span>
+            <?php echo substr($data->vote_average, 0, 3); ?> / 10
+        </h3>
+        <h3 class="h3" id="popularity-header"><i class="fa fa-eye"></i>
+            <?php echo intval($data->popularity); ?>
+        </h3>
     </div>
+    <div id="backdrop">
+        <?php
+        print_r('<img src="https://image.tmdb.org/t/p/w500' . $data->poster_path . '"/>');
+        ?>
+    </div>
+    <div id="genres">
+        @foreach ($data->genres as $e)
+            <button class='genrebuttons'>{{ $e->name }}</button>
+        @endforeach
+    </div>
+    <div class="title-div">
+        <h2>Overview</h2>
+        <button id="watchlist-button">
+            <i class="fa-solid fa-plus plus"></i>
+            Add to watchlist
+        </button>
+    </div>
+    <div id="overview">
+        <?php
+        print_r("<p>$data->overview</p>");
+        ?>
+
+    </div>
+    <div>
+        <h4 id="commentsheader">Reviews</h4>
+        <div class=commentsForm>
+            <form id="commentForm" type="submit">
+                <textarea id="commentInput" name="Text1" cols="40" rows="5"
+                          placeholder="What did you think of the movie"></textarea>
+                <button class="commentButton" type="submit">Submit</button>
+            </form>
+        </div>
+        <div id="comments">
+
+        </div>
+
+    </div>
+</div>
 </body>
 <script>
-    console.log(<?php echo $user; ?>);
-    console.log("Hello");
     let comments = document.querySelector("#comments");
-    let key = "<?php echo $key->results[0]->key; ?>";
+    let key = "<?php $key = ;echo $key->results[0]->key; ?>";
     var backdrop = document.querySelector('#backdrop');
     backdrop.innerHTML += `<iframe src="https://www.youtube.com/embed/${key}?controls=0&autoplay=0&mute=1"></iframe>`;
 
@@ -94,28 +93,28 @@
     async function getWatchlist() {
         //if is logged in
         @if (session()->has('user'))
-            let a = await $.ajax({
-                url: `/api/getWatchlist/{{ $user->id }}/${window.location.pathname.substr(7)}`,
-                method: 'GET',
-            }).done((res) => {
-                //if current movie is watchlisted by current user
-                if (res.length > 0) {
-                    button.style = 'background-color: grey';
-                    button.innerHTML =
-                        '<i class="fa-solid fa-check plus"></i> Remove from watchlist';
-                    isAdded = true;
-                }
-                //if current movie is not watchlisted by current user
-                else {
-                    button.style = 'background-color: yellow';
-                    button.innerHTML =
-                        '<i class="fa-solid fa-plus plus"></i> Add to watchlist';
-                    isAdded = false;
-                }
-            })
-            //if not logged in
+        let a = await $.ajax({
+            url: `/api/getWatchlist/{{ $user->id }}/${window.location.pathname.substr(7)}`,
+            method: 'GET',
+        }).done((res) => {
+            //if current movie is watchlisted by current user
+            if (res.length > 0) {
+                button.style = 'background-color: grey';
+                button.innerHTML =
+                    '<i class="fa-solid fa-check plus"></i> Remove from watchlist';
+                isAdded = true;
+            }
+            //if current movie is not watchlisted by current user
+            else {
+                button.style = 'background-color: yellow';
+                button.innerHTML =
+                    '<i class="fa-solid fa-plus plus"></i> Add to watchlist';
+                isAdded = false;
+            }
+        })
+        //if not logged in
         @else
-            document.querySelector('#watchlist-button').style.visibility = 'hidden';
+        document.querySelector('#watchlist-button').style.visibility = 'hidden';
         @endif
     }
 
@@ -133,61 +132,61 @@
     async function deleteFromWatchlist() {
         @if (session()->has('user'))
             return fetch('/api/removeFromWatchlist', {
-                method: 'POST',
-                body: JSON.stringify({
-                    movie_id: parseInt(window.location.pathname.substr(7), 10),
-                    user_id: {{ $user->id }}
-                }),
-                headers: {
-                    "Content-Type": "application/json",
-                }
-            })
+            method: 'POST',
+            body: JSON.stringify({
+                movie_id: parseInt(window.location.pathname.substr(7), 10),
+                user_id: {{ $user->id }}
+            }),
+            headers: {
+                "Content-Type": "application/json",
+            }
+        })
         @endif
     }
 
     async function addToWatchlist() {
         @if (session()->has('user'))
             return $.ajax({
-                url: `/api/watchlist/${window.location.pathname.substr(7)}/{{ $user->id }}`,
-                method: "GET",
-                success: (result) => {
-                    console.log(result);
-                }
-            })
+            url: `/api/watchlist/${window.location.pathname.substr(7)}/{{ $user->id }}`,
+            method: "GET",
+            success: (result) => {
+                console.log(result);
+            }
+        })
         @endif
     }
 
 
     function postComment(movieId, body) {
         @if (session()->has('user'))
-            $.ajax({
-                url: `/api/post/${movieId}/${body}/{{ $user->id }}`,
-                type: "GET",
-                success: (result) => {
-                    console.log(result)
-                }
-            })
+        $.ajax({
+            url: `/api/post/${movieId}/${body}/{{ $user->id }}`,
+            type: "GET",
+            success: (result) => {
+                console.log(result)
+            }
+        })
         @endif
     }
 
     function deleteComment(commentsId, userId) {
         @if (session()->has('user'))
-            if (userId == {{ $user->id }}) {
-                $.ajax({
-                    url: `/api/delete/${commentsId}`,
-                    type: "GET",
-                    success: (result) => {
-                        refreshComments()
-                    }
-                })
-            } else {
-                alert("Not ur comment")
-            }
+        if (userId == {{ $user->id }}) {
+            $.ajax({
+                url: `/api/delete/${commentsId}`,
+                type: "GET",
+                success: (result) => {
+                    refreshComments()
+                }
+            })
+        } else {
+            alert("Not ur comment")
+        }
         @endif
     }
 
     async function getUsername(userId) {
-        /*** 
+        /***
          * http call to endpoint querying database model User on userId getting the username
          * takes @String userId
          * return @String username
@@ -266,7 +265,7 @@
 
     iframe {
         aspect-ratio: 16 / 9;
-        height: 600;
+        height: 600%;
         width: 100%;
     }
 
@@ -352,7 +351,7 @@
         padding: 0;
     }
 
-    #under-title-div>* {
+    #under-title-div > * {
         margin-right: 2rem;
         font-size: 0.8rem;
         opacity: 0.7;
