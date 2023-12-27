@@ -47,45 +47,92 @@
     <h1 id="watchlist-title">Your Watchlist</h1>
     <div id="watchlist-div"></div>
 </div>
+<button id="left-arrow" style="visibility: hidden"><i class="fa-solid fa-chevron-left"></i></button>
+
+<div style="display: flex; justify-content: space-between; width: 100%;">
+    <!-- Add the new buttons here -->
+    <button id="previous-page" class="pagination-button">Previous</button>
+    <button id="next-page" class="pagination-button">Next</button>
+</div>
+
+<button id="right-arrow"><i class="fa-solid fa-chevron-right"></i></button>
+
 
 <!-- Pagination Links -->
 <div class="pagination">
     {{ $paginatedData->onEachSide(5)->links('pagination::bootstrap-4') }}
-    <!-- Previous Page Button -->
-    @if ($paginatedData->currentPage() > 1)
-        <a href="{{ url('/loadPopular', ['page' => $paginatedData->currentPage() - 1, 'order' => $order]) }}" class="pagination-link">Previous</a>
-    @endif
 
-    <!-- Next Page Button -->
-    @if ($paginatedData->hasMorePages())
-        <a href="{{ $paginatedData->nextPageUrl() }}" class="pagination-link">Next</a>
-    @endif
 
-    <!-- Sort Buttons -->
-    <a href="{{ url('/loadPopular', ['page' => 1, 'order' => 'desc']) }}" class="pagination-link">Older to Newer</a>
-    <a href="{{ url('/loadPopular', ['page' => 1, 'order' => 'asc']) }}" class="pagination-link">Newer to Older</a>
 </div>
 </div>
-    <script>
+<script>
         let counter = 0;
         let data = <?php echo json_encode($data); ?>;
-
         let posterdiv = document.querySelectorAll('.redposterimg');
         let rightarrow = document.querySelector('#right-arrow');
         let leftarrow = document.querySelector('#left-arrow');
-        rightarrow.addEventListener('click', (event) => {
-            counter++;
-            posterdiv.forEach((element, i) => {
-                element.setAttribute('src', 'https://image.tmdb.org/t/p/w500' + data[i + counter]
-                    .poster_path);
-            })
-            if (counter > 4) rightarrow.style.visibility = "hidden";
-            else rightarrow.style.visibility = "visible";
-            if (counter > 0) leftarrow.style.visibility = "visible";
-            else leftarrow.style.visibility = "hidden";
-        })
+        let currentPage = {{ $paginatedData->currentPage() }};
+        let order = '{{ $order }}';
 
-        leftarrow.addEventListener('click', (event) => {
+        // Function to update posters based on current counter
+        function updatePosters() {
+        posterdiv.forEach((element, i) => {
+            element.setAttribute('src', 'https://image.tmdb.org/t/p/w500' + data[i + counter].poster_path);
+        });
+
+        // Update visibility of arrows
+        if (counter > 4) rightarrow.style.visibility = "hidden";
+        else rightarrow.style.visibility = "visible";
+        if (counter > 0) leftarrow.style.visibility = "visible";
+        else leftarrow.style.visibility = "hidden";
+    }
+
+        // Fetch and display movies for the specified page
+        async function fetchAndDisplayMovies(page, order) {
+        const response = await fetch(`/loadPopular?page=${page}&order=${order}`);
+        const fetchedData = await response.json();
+        data = fetchedData.results;
+        updatePosters();
+    }
+
+        // Initial fetch and display
+        fetchAndDisplayMovies(currentPage, order);
+
+        // Example usage when clicking on pagination links
+        document.querySelectorAll(".pagination a.page-link").forEach(link => {
+        link.addEventListener("click", (event) => {
+            event.preventDefault();
+            const nextPage = link.getAttribute("data-page"); // Get the page number from the link
+
+            if (nextPage && nextPage !== currentPage) {
+                // Fetch and display movies for the clicked page
+                fetchAndDisplayMovies(nextPage, order);
+                currentPage = nextPage;
+            }
+        });
+    });
+
+        // Event listeners for the "Previous" and "Next" buttons
+        document.getElementById("previous-page").addEventListener("click", (event) => {
+        event.preventDefault();
+        if (currentPage > 1) {
+        // Fetch and display movies for the previous page
+        fetchAndDisplayMovies(currentPage - 1, order);
+        currentPage = currentPage - 1;
+    }
+    });
+
+        document.getElementById("next-page").addEventListener("click", (event) => {
+        event.preventDefault();
+        if (currentPage < {{ $paginatedData->lastPage() }}) {
+        // Fetch and display movies for the next page
+        fetchAndDisplayMovies(currentPage + 1, order);
+        currentPage = currentPage + 1;
+    }
+    });
+
+
+    leftarrow.addEventListener('click', (event) => {
             counter--;
             posterdiv.forEach((element, i) => {
                 element.setAttribute('src', 'https://image.tmdb.org/t/p/w500' + data[i + counter]
@@ -286,5 +333,17 @@
     .pagination a.pagination-link:last-child {
         border-top-right-radius: 5px;
         border-bottom-right-radius: 5px;
+    }
+    .pagination-button {
+        background-color: #333;
+        color: white;
+        padding: 8px 16px;
+        border: none;
+        cursor: pointer;
+        margin: 0 10px;
+    }
+
+    .pagination-button:hover {
+        background-color: #555;
     }
 </style>
