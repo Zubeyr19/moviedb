@@ -26,7 +26,6 @@
     <div id="searchPoster"></div>
 
     <div id="poster-div" style="display: flex; flex-direction: column; align-items: center;">
-        <button id="left-arrow" style="visibility: hidden"><i class="fa-solid fa-chevron-left"></i></button>
 
         <div style="display: flex; flex-wrap: wrap; justify-content: center;">
             <?php
@@ -40,109 +39,66 @@
             }
             ?>
         </div>
+        <div style="display: flex; justify-content: space-between; width: 100%;">
+            <!-- Add the new buttons here -->
+            <button id="previous-page" class="pagination-button">Previous</button>
+            <button id="Older-page" class="pagination-button">Older</button>
+            <button id="Newer-page" class="pagination-button">Newer</button>
+            <button id="next-page" class="pagination-button">Next</button>
+        </div>
 
-        <button id="right-arrow"><i class="fa-solid fa-chevron-right"></i></button>
     </div>
 
     <h1 id="watchlist-title">Your Watchlist</h1>
     <div id="watchlist-div"></div>
 </div>
-<button id="left-arrow" style="visibility: hidden"><i class="fa-solid fa-chevron-left"></i></button>
-
-<div style="display: flex; justify-content: space-between; width: 100%;">
-    <!-- Add the new buttons here -->
-    <button id="previous-page" class="pagination-button">Previous</button>
-    <button id="next-page" class="pagination-button">Next</button>
-</div>
-
-<button id="right-arrow"><i class="fa-solid fa-chevron-right"></i></button>
-
-
-<!-- Pagination Links -->
-<div class="pagination">
-    {{ $paginatedData->onEachSide(5)->links('pagination::bootstrap-4') }}
-
 
 </div>
-</div>
+
+
 <script>
-        let counter = 0;
-        let data = <?php echo json_encode($data); ?>;
-        let posterdiv = document.querySelectorAll('.redposterimg');
-        let rightarrow = document.querySelector('#right-arrow');
-        let leftarrow = document.querySelector('#left-arrow');
-        let currentPage = {{ $paginatedData->currentPage() }};
-        let order = '{{ $order }}';
+    let counter = 0;
+    let data = <?php echo json_encode($data); ?>;
+    let posterdiv = document.querySelectorAll('.redposterimg');
+    let nextButton = document.querySelector('#next-page');
+    let previousButton = document.querySelector('#previous-page');
 
-        // Function to update posters based on current counter
-        function updatePosters() {
+    // Function to update posters based on the current counter
+    function updatePosters() {
         posterdiv.forEach((element, i) => {
-            element.setAttribute('src', 'https://image.tmdb.org/t/p/w500' + data[i + counter].poster_path);
-        });
-
-        // Update visibility of arrows
-        if (counter > 4) rightarrow.style.visibility = "hidden";
-        else rightarrow.style.visibility = "visible";
-        if (counter > 0) leftarrow.style.visibility = "visible";
-        else leftarrow.style.visibility = "hidden";
-    }
-
-        // Fetch and display movies for the specified page
-        async function fetchAndDisplayMovies(page, order) {
-        const response = await fetch(`/loadPopular?page=${page}&order=${order}`);
-        const fetchedData = await response.json();
-        data = fetchedData.results;
-        updatePosters();
-    }
-
-        // Initial fetch and display
-        fetchAndDisplayMovies(currentPage, order);
-
-        // Example usage when clicking on pagination links
-        document.querySelectorAll(".pagination a.page-link").forEach(link => {
-        link.addEventListener("click", (event) => {
-            event.preventDefault();
-            const nextPage = link.getAttribute("data-page"); // Get the page number from the link
-
-            if (nextPage && nextPage !== currentPage) {
-                // Fetch and display movies for the clicked page
-                fetchAndDisplayMovies(nextPage, order);
-                currentPage = nextPage;
+            // Update only if there is data available for the current index
+            if (data[i + counter]) {
+                element.setAttribute('src', 'https://image.tmdb.org/t/p/w500' + data[i + counter].poster_path);
+            } else {
+                // If no data available, you can set a placeholder image or clear the src attribute
+                element.setAttribute('src', 'path/to/placeholder-image.jpg');
             }
         });
-    });
 
-        // Event listeners for the "Previous" and "Next" buttons
-        document.getElementById("previous-page").addEventListener("click", (event) => {
+        // Update visibility of buttons
+        if (counter > 1) nextButton.style.visibility = "hidden";
+        else nextButton.style.visibility = "visible";
+        if (counter > 0) previousButton.style.visibility = "visible";
+        else previousButton.style.visibility = "hidden";
+    }
+
+
+
+    // Event listener for the "Previous" button
+    previousButton.addEventListener("click", async (event) => {
         event.preventDefault();
         if (currentPage > 1) {
-        // Fetch and display movies for the previous page
-        fetchAndDisplayMovies(currentPage - 1, order);
-        currentPage = currentPage - 1;
-    }
+            // Decrement the currentPage to go to the previous page
+            currentPage = currentPage - 1;
+            await fetchAndDisplayMovies(currentPage, order);
+        }
     });
 
-        document.getElementById("next-page").addEventListener("click", (event) => {
+    // Event listener for the "Next" button
+    nextButton.addEventListener("click", async (event) => {
         event.preventDefault();
-        if (currentPage < {{ $paginatedData->lastPage() }}) {
-        // Fetch and display movies for the next page
-        fetchAndDisplayMovies(currentPage + 1, order);
-        currentPage = currentPage + 1;
-    }
+        await loadMoreMovies();
     });
-
-
-    leftarrow.addEventListener('click', (event) => {
-            counter--;
-            posterdiv.forEach((element, i) => {
-                element.setAttribute('src', 'https://image.tmdb.org/t/p/w500' + data[i + counter]
-                    .poster_path);
-            })
-            if (counter > 0) leftarrow.style.visibility = "visible";
-            else leftarrow.style.visibility = "hidden"
-            if (counter > 4) rightarrow.style.visibility = "hidden"
-            else rightarrow.style.visibility = "visible";
-        })
 
         async function getPosterPath(movie_id) {
             return fetch(`/api/getPosterPath/${movie_id}`, {
@@ -306,34 +262,6 @@
         margin-top: 7rem;
     }
     /* Pagination Styles */
-    .pagination a.pagination-link {
-        color: black;
-        float: left;
-        padding: 8px 16px;
-        text-decoration: none;
-        border: 1px solid #ddd;
-        margin-right: 5px; /* Adjust margin as needed */
-    }
-
-    .pagination a.pagination-link:hover:not(.active) {
-        background-color: #ddd;
-    }
-
-    .pagination a.pagination-link.active {
-        background-color: #4CAF50;
-        color: white;
-        border: 1px solid #4CAF50;
-    }
-
-    .pagination a.pagination-link:first-child {
-        border-top-left-radius: 5px;
-        border-bottom-left-radius: 5px;
-    }
-
-    .pagination a.pagination-link:last-child {
-        border-top-right-radius: 5px;
-        border-bottom-right-radius: 5px;
-    }
     .pagination-button {
         background-color: #333;
         color: white;

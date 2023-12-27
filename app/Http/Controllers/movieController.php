@@ -12,37 +12,15 @@ use Illuminate\Support\Facades\Input;
 
 class movieController extends Controller
 {
-    public function loadPopular(Request $request)
+    public function loadPopular()
     {
-        $accessToken = "Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI3MzU2ZjZjNzgxZjg0MjAyNjM2N2I4YmFhMjI1YWJkYiIsInN1YiI6IjY1MDFjOTdkNTU0NWNhMDBhYjVkYmRkOSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.zvglGM1QgLDK33Dt6PpMK9jeAOrLNnxClZ6mkLeMgBE";
-        $page = $request->query('page', 1);
-        $order = $request->query('order', 'popularity.desc');
-
-        // Extract order direction (asc or desc)
-        $orderDirection = 'desc'; // default
-        if (str_ends_with($order, '.asc')) {
-            $orderDirection = 'asc';
-        }
-
-        $url = "https://api.themoviedb.org/3/discover/movie?include_adult=false&include_video=false&language=en-US&page=$page&sort_by=$order";
+        $accessToken =
+            "Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI3MzU2ZjZjNzgxZjg0MjAyNjM2N2I4YmFhMjI1YWJkYiIsInN1YiI6IjY1MDFjOTdkNTU0NWNhMDBhYjVkYmRkOSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.zvglGM1QgLDK33Dt6PpMK9jeAOrLNnxClZ6mkLeMgBE";
+        $url = "https://api.themoviedb.org/3/discover/movie?include_adult=false&include_video=false&language=en-US&page=1&sort_by=popularity.desc";
         $res = Http::withHeaders(["Authorization" => $accessToken])->get($url);
-        $apiResponse = json_decode($res->body(), false);
-
-        // Check if API response includes pagination attributes
-        $data = $apiResponse->results ?? [];
-        $currentPage = $apiResponse->page ?? 1;
-        $totalResults = $apiResponse->total_results ?? 0;
-        $totalPages = min(3, $apiResponse->total_pages ?? 1); // Limit to a maximum of 3 pages
-
-        // Adjust perPage based on the desired total number of items
-        $perPage = min(10, $totalResults); // Change the perPage as needed, but limit it based on totalResults
-
-        // Create a paginator instance using the API response data
-        $paginatedData = new LengthAwarePaginator($data, $totalResults, $perPage, $currentPage);
-
-        $paginatedData->setPath('/loadPopular'); // Set the route for the pagination links
-
-        return view('test', compact('paginatedData', 'order')); // Pass paginatedData and order to the view
+        $decode = json_decode($res->body(), false);
+        session(['data' => $decode->results]);
+        return view('test');
     }
     public function setupSearch($query)
     {
