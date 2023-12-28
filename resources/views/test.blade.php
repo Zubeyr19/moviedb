@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<body lang="en">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
@@ -33,8 +33,17 @@
             $poster = session('poster');
             if (isset($data)) {
                 // Display up to 10 movies in a 5x2 grid
-                for ($i = 0; $i < min(10, count($data)); $i++) {
-                    echo '<div class="redposter" style="margin: 0.5rem;"><img class="redposterimg poster" src="https://image.tmdb.org/t/p/w500' . $data[$i]->poster_path . '"></div>';
+                $counter = 0;
+                foreach ($data as $movie) {
+                    if ($counter >= 10) {
+                        break; // Limit to 10 movies
+                    }
+
+                    // Adjust the following line to your styling needs
+                    echo '<div class="redposter" style="margin: 0.5rem;"><img class="redposterimg poster" src="https://image.tmdb.org/t/p/w500' . $movie->poster_path . '"></div>';
+
+                    // Increment the counter after displaying a movie
+                    $counter++;
                 }
             }
             ?>
@@ -42,8 +51,6 @@
         <div style="display: flex; justify-content: space-between; width: 100%;">
             <!-- Add the new buttons here -->
             <button id="previous-page" class="pagination-button">Previous</button>
-            <button id="Older-page" class="pagination-button">Older</button>
-            <button id="Newer-page" class="pagination-button">Newer</button>
             <button id="next-page" class="pagination-button">Next</button>
         </div>
 
@@ -54,8 +61,6 @@
 </div>
 
 </div>
-
-
 <script>
     let counter = 0;
     let data = <?php echo json_encode($data); ?>;
@@ -63,67 +68,100 @@
     let nextButton = document.querySelector('#next-page');
     let previousButton = document.querySelector('#previous-page');
 
-    // Function to update posters based on the current counter
-    function updatePosters() {
-        posterdiv.forEach((element, i) => {
-            // Update only if there is data available for the current index
-            if (data[i + counter]) {
-                element.setAttribute('src', 'https://image.tmdb.org/t/p/w500' + data[i + counter].poster_path);
-            } else {
-                // If no data available, you can set a placeholder image or clear the src attribute
-                element.setAttribute('src', 'path/to/placeholder-image.jpg');
-            }
-        });
-
-        // Update visibility of buttons
-        if (counter > 1) nextButton.style.visibility = "hidden";
-        else nextButton.style.visibility = "visible";
-        if (counter > 0) previousButton.style.visibility = "visible";
-        else previousButton.style.visibility = "hidden";
-    }
-
-
 
     // Event listener for the "Previous" button
     previousButton.addEventListener("click", async (event) => {
-        event.preventDefault();
-        if (currentPage > 1) {
-            // Decrement the currentPage to go to the previous page
-            currentPage = currentPage - 1;
-            await fetchAndDisplayMovies(currentPage, order);
+        counter--;
+        if (counter < 0) {
+            // If counter is negative, set it to the last page
+            counter = Math.floor(data.length / itemsPerPage) - 1;
         }
+        await loadMovies();
     });
 
     // Event listener for the "Next" button
     nextButton.addEventListener("click", async (event) => {
-        event.preventDefault();
-        await loadMoreMovies();
+        counter++;
+        await loadMovies();
     });
 
-        async function getPosterPath(movie_id) {
-            return fetch(`/api/getPosterPath/${movie_id}`, {
-                method: "GET"
-            }).then(async (result) => {
-                return result.json();
-            })
+    // Function to load movies based on the current counter
+    async function loadMovies() {
+        // Specify the number of items to display per page
+        const itemsPerPage = 10;
+
+        // Calculate the starting index for the current page
+        const startIndex = counter * itemsPerPage;
+
+        // Check if the starting index is within the bounds of the data
+        if (startIndex >= 0 && startIndex < data.length) {
+            posterdiv.forEach(async (element, i) => {
+                const dataIndex = startIndex + i;
+
+                if (data[dataIndex]) {
+                    let posterpath = await getPosterPath(data[dataIndex].id);
+                    element.setAttribute('src', `https://image.tmdb.org/t/p/w500${posterpath.poster_path}`);
+                } else {
+                    element.setAttribute('src', 'path/to/placeholder-image.jpg');
+                }
+            });
+
+            // Update visibility of buttons
+            previousButton.style.visibility = "visible";
+            nextButton.style.visibility = "visible";
+        } else {
+            // Reset the counter if it goes beyond the available data
+            counter = 0;
+            loadMovies();
+            return;
         }
 
-        async function getWatchlist(id) {
-            return fetch(`/api/getUserWatchlist/${id}`, {
-                method: "GET"
-            }).then(async (result) => {
-                return result.json();
-            })
+        // Update visibility of buttons
+        previousButton.style.visibility = "visible"; // Always set the "Previous" button to visible
+
+        if (counter >= Math.floor(data.length / itemsPerPage)) {
+            nextButton.style.visibility = "hidden";
+        } else {
+            nextButton.style.visibility = "visible";
         }
+    }
 
+    // Initial load
+    loadMovies();
 
-        getWatchlist(
-            @if (session()->has('user'))
-                {{ session('user')->id }}
+    async function getPosterPath(movie_id) {
+        try {
+            const response = await fetch(`/api/getPosterPath/${movie_id}`, {
+                method: "GET"
+            });
+
+            if (!response.ok) {
+                throw new Error(`Error: ${response.status} - ${response.statusText}`);
+            }
+
+            return response.json();
+        } catch (error) {
+            console.error('Error fetching poster path:', error);
+            // Handle the error, such as returning a default value or rethrowing the error
+            throw error;
+        }
+    }
+
+    async function getWatchlist(id) {
+        return fetch(`/api/getUserWatchlist/${id}`, {
+            method: "GET"
+        }).then(async (result) => {
+            return result.json();
+        })
+    }
+
+    getWatchlist(
+        @if (session()->has('user'))
+            {{ session('user')->id }}
             @else
-                -1
-            @endif
-        ).then(async (response) => {
+        -1
+        @endif
+    ).then(async (response) => {
             let div = document.querySelector('#watchlist-div');
             if (response.length == 0) {
                 let text = document.createElement('p');
@@ -154,36 +192,32 @@
             }
         })
 
-        document.querySelector("#form").addEventListener("submit", (event) => {
-            event.preventDefault();
-            const input = document.querySelector("#input").value;
-            $.ajax({
-                url: 'api/test/' + input,
-                type: "GET",
-                success: (result) => {
-                    document.querySelector('#searchPoster').innerHTML +=
-                        `<img class="poster" src="https://image.tmdb.org/t/p/w500${result}">`
-                }
-            })
-        });
-
-        var posters = document.querySelectorAll(".redposter");
-
-        posters.forEach((element, i) => {
-            element.addEventListener('click', (event) => {
-                window.location.href = '/movie/' + data[i + counter].id;
-            })
+    document.querySelector("#form").addEventListener("submit", (event) => {
+        event.preventDefault();
+        const input = document.querySelector("#input").value;
+        $.ajax({
+            url: 'api/test/' + input,
+            type: "GET",
+            success: (result) => {
+                document.querySelector('#searchPoster').innerHTML +=
+                    `<img class="poster" src="https://image.tmdb.org/t/p/w500${result}">`
+            }
         })
-    </script>
+    });
+
+    var posters = document.querySelectorAll(".redposter");
+
+    posters.forEach((element, i) => {
+        element.addEventListener('click', (event) => {
+            window.location.href = '/movie/' + data[i + counter].id;
+        })
+    })
+</script>
 </body>
 
 
-</body>
+</html>
 <style>
-    #image {
-        display: flex;
-    }
-
     body {
         background-color: #000;
         color: white;
@@ -191,6 +225,7 @@
         padding: 0;
         min-height: 100vh;
         height: 100%;
+        font-family: 'Arial', sans-serif;
     }
 
     h1 {
@@ -224,43 +259,22 @@
     #watchlist-div {
         display: flex;
         place-content: center;
+        margin-top: 1rem;
     }
 
     #title-div,
     #watchlist-title {
         margin-top: 2rem;
         margin-left: 9rem;
-    }
-
-    #right-arrow {
-        display: flex;
-        place-self: center;
-    }
-
-    #left-arrow {
-        display: flex;
-        place-self: center;
-    }
-
-    #left-arrow,
-    #right-arrow {
-        border: none;
-        background: none;
-    }
-
-    .fa-solid {
-        color: white;
-    }
-
-    #right-arrow:hover,
-    #left-arrow:hover {
-        opacity: 0.8;
+        font-size: 1.5rem;
     }
 
     #emptywatchlist {
         position: absolute;
         margin-top: 7rem;
+        font-size: 1rem;
     }
+
     /* Pagination Styles */
     .pagination-button {
         background-color: #333;
@@ -269,6 +283,7 @@
         border: none;
         cursor: pointer;
         margin: 0 10px;
+        font-size: 14px;
     }
 
     .pagination-button:hover {
